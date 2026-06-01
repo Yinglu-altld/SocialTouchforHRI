@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Touch Acceptability Survey — RQ1</title>
+<style>
+  :root {
+    --bg: #0a0a0a; --card: #141414; --border: #2a2a2a;
+    --text: #f0f0f0; --dim: #777; --accent: #5b9bff; --radius: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6; min-height: 100vh;
+  }
+  .container { max-width: 1060px; margin: 0 auto; padding: 32px 20px; }
+
+  .header { text-align: center; margin-bottom: 28px; }
+  .header h1 { font-size: 1.45rem; font-weight: 600; margin-bottom: 4px; }
+  .header .sub { color: var(--dim); font-size: 0.82rem; }
+  .divider { width: 50px; height: 3px; background: var(--accent); margin: 12px auto; }
+
+  .step { display: none; }
+  .step.active { display: block; }
+  .step-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+  .step-desc { color: var(--dim); font-size: 0.8rem; margin-bottom: 20px; }
+
+  .progress-wrap { margin-bottom: 24px; }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); transition: width 0.35s; border-radius: 2px; }
+  .progress-text { font-size: 0.7rem; color: var(--dim); margin-top: 5px; text-align: right; }
+
+  /* ── STEP 1 ── */
+  .intent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+  .select-row { display:flex; gap:8px; justify-content:flex-end; margin-bottom:8px; }
+  .select-row button { background:none; border:none; color:var(--accent); font-size:0.76rem; cursor:pointer; }
+  .intent-card {
+    background: var(--card); border: 2px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; cursor: pointer; transition: all 0.18s; user-select: none; position: relative;
+  }
+  .intent-card:hover { border-color: #444; }
+  .intent-card.sel { border-color: var(--accent); background: #111b2a; }
+  .intent-card .name { font-size: 0.9rem; font-weight: 600; }
+  .intent-card .en { font-size: 0.7rem; color: var(--dim); margin-left: 6px; }
+  .intent-card .desc { font-size: 0.74rem; color: #999; margin-top: 4px; line-height: 1.3; }
+  .intent-card .dot {
+    position: absolute; top: 12px; right: 14px;
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; transition: all 0.18s;
+  }
+  .intent-card.sel .dot { border-color: var(--accent); background: var(--accent); }
+  .intent-card.sel .dot::after { content: "✓"; color: var(--bg); font-size: 11px; font-weight: 700; }
+
+  /* ── STEP 2 ── */
+  .badge { display:inline-block;background:var(--accent);color:var(--bg);font-size:0.78rem;font-weight:600;padding:4px 14px;border-radius:20px;margin-bottom:8px; }
+  .maps-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; align-items: flex-start; }
+  .map-panel { text-align: center; }
+  .map-panel h4 { font-size: 0.82rem; color: var(--dim); margin-bottom: 4px; font-weight: 500; letter-spacing: 0.03em; }
+
+  /* Color legend */
+  .color-legend {
+    display:flex; flex-direction:column; align-items:flex-start; gap:6px;
+    padding:16px 10px; align-self:stretch; justify-content:center; min-width:140px;
+  }
+  .color-legend .leg-item { display:flex; align-items:center; gap:8px; font-size:0.7rem; color:var(--dim); }
+  .color-legend .leg-swatch { width:16px; height:16px; border-radius:3px; flex-shrink:0; }
+  .color-legend .leg-swatch.l2p { background:rgba(22,163,74,0.70); }
+  .color-legend .leg-swatch.l1p { background:rgba(253,224,71,0.55); }
+  .color-legend .leg-swatch.l0  { background:#181818; border:1px solid #444; }
+  .color-legend .leg-swatch.l1n { background:rgba(252,165,165,0.60); }
+  .color-legend .leg-swatch.l2n { background:rgba(220,38,38,0.65); }
+  .color-legend .leg-title { font-size:0.75rem; font-weight:600; color:var(--text); margin-bottom:4px; }
+
+  /* SVG */
+  .map-panel svg { cursor: pointer; }
+  .map-panel svg .region { transition: fill 0.1s, stroke 0.1s; }
+  .map-panel svg .region:hover { filter:brightness(1.35); stroke:#fff; stroke-width:1.6; }
+  .map-panel svg .region.hover-pair { filter:brightness(1.2); stroke:#fff; stroke-width:1.2; stroke-dasharray:2,2; }
+  .s0  { fill:#181818; stroke:#333; stroke-width:0.8; }                     /*  0 = neutral (default) */
+  .sp2 { fill:rgba(22,163,74,0.62);  stroke:#16a34a; stroke-width:1.2; }   /* +2 = completely acceptable */
+  .sp1 { fill:rgba(253,224,71,0.45); stroke:#eab308; stroke-width:1; }    /* +1 = somewhat acceptable */
+  .sn1 { fill:rgba(252,165,165,0.50); stroke:#fca5a5; stroke-width:1; }    /* -1 = somewhat unacceptable */
+  .sn2 { fill:rgba(220,38,38,0.58);  stroke:#dc2626; stroke-width:1.2; }   /* -2 = completely unacceptable */
+  .map-panel svg .silhouette { fill:none; stroke:#444; stroke-width:2; }
+
+  .region-tooltip {
+    position:fixed; background:#1a1a1a; color:#fff; font-size:0.72rem;
+    padding:5px 10px; border-radius:4px; pointer-events:none; z-index:999;
+    border:1px solid #555; display:none; white-space:nowrap;
+  }
+
+  /* ── Nav ── */
+  .nav { display:flex; gap:12px; justify-content:center; margin-top:24px; align-items:center; }
+  .btn { padding:10px 26px; border-radius:8px; font-size:0.86rem; font-weight:600; cursor:pointer; transition:all 0.18s; border:none; }
+  .btn-p { background:var(--accent); color:var(--bg); }
+  .btn-p:hover { filter:brightness(1.15); }
+  .btn-p:disabled { background:#333; color:#666; cursor:not-allowed; }
+  .btn-s { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .btn-s:hover { border-color:#555; }
+  .btn-e { background:#22c55e; color:var(--bg); }
+  .btn-e:hover { filter:brightness(1.15); }
+  .btn-warn { background:transparent; border:1px solid #ef4444; color:#ef4444; font-size:0.78rem; }
+  .btn-warn:hover { background:rgba(239,68,68,0.15); }
+  .counter { color:var(--dim); font-size:0.82rem; min-width:110px; text-align:center; }
+
+  /* ── STEP 3 ── */
+  .rev-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap:10px; }
+  .rev-card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px; }
+  .rev-card .r-name { font-weight:600; font-size:0.86rem; }
+  .rev-card .r-stats { font-size:0.72rem; color:var(--dim); margin-top:4px; }
+
+  @media (max-width: 760px) {
+    .maps-row { flex-direction:column; align-items:center; }
+    .color-legend { flex-direction:row; flex-wrap:wrap; padding:8px 16px; }
+    .intent-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Social Touch Acceptability Survey</h1>
+    <div class="sub">Robot-Initiated Physical Contact — Body Region Acceptability Mapping</div>
+    <div class="divider"></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+    <div class="progress-text" id="pText">Step 1</div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 1                                                            -->
+  <!-- ================================================================ -->
+  <div class="step active" id="s1">
+    <div class="step-title">Step 1 — Which social intents are appropriate for robot touch?</div>
+    <div class="step-desc">
+      Below are 10 ways humans communicate through touch (Bhardwaj et al., CHI 2026).
+      <strong>Select all</strong> that you believe a robot should be allowed to convey through physical touch.
+    </div>
+    <div class="select-row">
+      <button onclick="selAll(true)">Select All</button>
+      <button onclick="selAll(false)">Clear All</button>
+    </div>
+    <div class="intent-grid" id="intentGrid"></div>
+    <div class="nav">
+      <button class="btn btn-p" id="btnToMaps" disabled onclick="goMaps()">
+        Continue → (<span id="selCount">0</span> selected)
+      </button>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 2                                                            -->
+  <!-- ================================================================ -->
+  <div class="step" id="s2">
+    <div class="step-title">Step 2 — Where on the body is this touch acceptable?</div>
+    <div class="step-desc">
+      <span class="badge" id="badge"></span><br>
+      <strong>Click each body region</strong> to rate:
+      +2 = completely acceptable → +1 → −1 → −2 = completely unacceptable → 0 = neutral.
+      All regions start at 0 (neutral / unselected).
+      Consider an <strong>adult-sized humanoid robot with mechanical hands</strong> that you interact with regularly.
+    </div>
+
+    <div class="maps-row">
+      <!-- FRONT -->
+      <div class="map-panel">
+        <h4>FRONT</h4>
+        <svg id="svgF" viewBox="0 0 220 540" width="250" height="614"></svg>
+      </div>
+
+      <!-- COLOR LEGEND -->
+      <div class="color-legend">
+        <div class="leg-title">Rating</div>
+        <div class="leg-item"><span class="leg-swatch l2p"></span> +2 &nbsp;Completely acceptable</div>
+        <div class="leg-item"><span class="leg-swatch l1p"></span> +1 &nbsp;Somewhat acceptable</div>
+        <div class="leg-item"><span class="leg-swatch l0"></span> &nbsp;0 &nbsp;Neutral (default)</div>
+        <div class="leg-item"><span class="leg-swatch l1n"></span> −1 &nbsp;Somewhat unacceptable</div>
+        <div class="leg-item"><span class="leg-swatch l2n"></span> −2 &nbsp;Completely unacceptable</div>
+        <div style="margin-top:8px;font-size:0.65rem;color:var(--dim)">
+          Click to cycle:<br>
+          +2 → +1 → −1 → −2 → 0
+        </div>
+      </div>
+
+      <!-- BACK -->
+      <div class="map-panel">
+        <h4>BACK</h4>
+        <svg id="svgB" viewBox="0 0 220 540" width="250" height="614"></svg>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn btn-warn" onclick="resetCur()">↺ Reset Current</button>
+      <button class="btn btn-s" onclick="prev()">← Prev</button>
+      <span class="counter" id="counter"></span>
+      <button class="btn btn-p" id="btnNext" onclick="next()">Next →</button>
+      <button class="btn btn-e" id="btnDone" style="display:none" onclick="done()">Review & Export →</button>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 3                                                            -->
+  <!-- ================================================================ -->
+  <div class="step" id="s3">
+    <div class="step-title">Step 3 — Review & Export</div>
+    <div class="step-desc">Check your responses, then download as JSON.</div>
+    <div class="rev-grid" id="revGrid"></div>
+    <div class="nav">
+      <button class="btn btn-s" onclick="back()">← Back to Maps</button>
+      <button class="btn btn-e" onclick="dl()">↓ Download JSON</button>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  <div class="region-tooltip" id="tooltip"></div>
+
+</div>
+
+<script>
+// ============================================================
+// INTENTS
+// ============================================================
+const INTENTS = [
+  { id:"affection",    zh:"亲昵/喜爱",     en:"Affection",      desc:"表达喜爱与温暖 — 拥抱、抚摸、牵手" },
+  { id:"comfort",      zh:"安慰/安抚",     en:"Comfort",        desc:"在悲伤/压力中提供情感支持 — 轻拍、握手臂。含道歉与和解" },
+  { id:"salutation",   zh:"问候/致意",     en:"Salutation",     desc:"见面/告别 — 握手、碰拳、轻拍" },
+  { id:"appreciation", zh:"欣赏/赞扬",     en:"Appreciation",   desc:"庆祝成就或认可 — 握手+拍肩、举起手臂" },
+  { id:"encouragement",zh:"鼓励/激励",     en:"Encouragement",  desc:"提供信心，帮助面对挑战 — 拍肩、握拳、轻推后背" },
+  { id:"inclusion",    zh:"归属/团结",     en:"Inclusion",      desc:"表示\"你是我们的一员\" — 侧抱、碰拳、搭肩" },
+  { id:"emphasis",     zh:"强调/获取注意", en:"Emphasis",       desc:"引起注意或强调对话 — 轻点手臂、轻推" },
+  { id:"gratitude",    zh:"感谢/感激",     en:"Gratitude",      desc:"表达感谢 — 握手、轻拍手臂" },
+  { id:"playful",      zh:"嬉戏/玩闹",     en:"Playful",        desc:"轻松的嬉戏触碰 — 轻推、轻捏" },
+  { id:"dominance",    zh:"支配/权力展示", en:"Dominance",      desc:"在等级结构中表示权威 — 按住肩、轻拍胸口" },
+];
+
+// ============================================================
+// SVG BODY MAP — COORDINATE SYSTEM 220 × 540
+// ============================================================
+// CRITICAL: large regions (face, torso) come FIRST, small overlays
+// (eyes, nose, mouth, ears) come AFTER so they render on top.
+// Bilateral regions: clicking either side rates both sides.
+
+// --- FRONT regions (order matters: base → overlays) ---
+
+// Layer 1: Base regions
+const F_BASE = [
+  { id:"f_scalp",       label:"头顶 / Scalp",             poly:[[85,10],[137,10],[146,34],[80,34]] },
+  { id:"f_face",        label:"面部 / Face",               poly:[[76,36],[148,36],[150,72],[140,88],[82,88],[72,72]] },
+  { id:"f_neck",        label:"颈部 / Neck",              poly:[[84,88],[138,88],[138,104],[84,104]] },
+  { id:"f_shoulders",   label:"肩部 / Shoulders",         poly:[[46,108],[88,108],[88,124],[58,134],[44,130]],
+                                                          polyR:[[134,108],[176,108],[178,130],[164,134],[134,124]] },
+  { id:"f_upper_arms",  label:"上臂 / Upper Arms",        poly:[[22,130],[60,130],[58,186],[40,200],[18,189]],
+                                                          polyR:[[162,130],[200,130],[204,189],[182,200],[162,186]] },
+  { id:"f_forearms",    label:"前臂 / Forearms",          poly:[[20,192],[58,192],[56,244],[38,256],[14,246]],
+                                                          polyR:[[164,192],[202,192],[208,246],[184,256],[164,244]] },
+  { id:"f_palms",       label:"手掌 / Palms",             poly:[[18,248],[56,248],[54,272],[40,280],[12,272]],
+                                                          polyR:[[166,248],[204,248],[210,272],[182,280],[166,272]] },
+  { id:"f_fingers",     label:"手指 / Fingers",           poly:[[22,278],[48,278],[46,294],[34,300],[18,294]],
+                                                          polyR:[[174,278],[200,278],[204,294],[188,300],[174,294]] },
+  { id:"f_chest",       label:"胸部 / Chest",              poly:[[60,132],[162,132],[162,204],[132,218],[90,218],[60,204]] },
+  { id:"f_stomach",     label:"腹部 / Abdomen",            poly:[[64,208],[158,208],[158,286],[120,302],[102,302],[64,286]] },
+  { id:"f_private",     label:"私密区域 / Private Area",   poly:[[72,292],[150,292],[150,322],[112,330],[72,322]] },
+  { id:"f_thighs",      label:"大腿 / Thighs",             poly:[[54,326],[102,326],[102,420],[72,430],[46,424],[46,332]],
+                                                          polyR:[[120,326],[168,326],[176,424],[150,430],[120,420]] },
+  { id:"f_knees",       label:"膝盖 / Knees",             poly:[[50,426],[78,426],[76,446],[58,450],[44,446]],
+                                                          polyR:[[144,426],[172,426],[178,446],[164,450],[148,446]] },
+  { id:"f_calves",      label:"小腿 / Calves",             poly:[[44,450],[84,450],[84,490],[66,498],[38,492],[38,456]],
+                                                          polyR:[[148,450],[178,450],[184,490],[156,498],[138,492],[138,456]] },
+  { id:"f_feet",        label:"足部 / Feet",               poly:[[40,494],[74,494],[76,530],[58,538],[34,532],[36,500]],
+                                                          polyR:[[148,494],[182,494],[188,532],[164,538],[148,530]] },
+];
+
+const F_REGIONS = F_BASE;
+
+// --- BACK regions ---
+const B_BASE = [
+  { id:"b_head",           label:"后脑 / Back of Head",          poly:[[78,8],[144,8],[144,68],[78,68]] },
+  { id:"b_neck",           label:"后颈 / Back of Neck",          poly:[[90,72],[132,72],[132,106],[90,106]] },
+  { id:"b_rear_shoulders", label:"后肩部 / Rear Shoulders",      poly:[[50,112],[172,112],[172,180],[50,180]] },
+  { id:"b_back",           label:"背部 / Back",                  poly:[[54,186],[168,186],[168,290],[54,290]] },
+  { id:"b_buttocks",       label:"臀部 / Buttocks",              poly:[[56,296],[166,296],[166,346],[132,358],[90,358],[56,346]] },
+  { id:"b_thighs",         label:"大腿后侧 / Back of Thighs",    poly:[[48,352],[102,352],[102,450],[74,456],[44,450]],
+                                                                 polyR:[[120,352],[174,352],[178,450],[148,456],[120,450]] },
+  { id:"b_lower_legs",     label:"小腿+足部 / Calves & Feet",    poly:[[44,454],[86,454],[84,540],[62,542],[38,540],[40,460]],
+                                                                 polyR:[[138,454],[178,454],[184,540],[160,542],[138,540]] },
+];
+
+const B_REGIONS = B_BASE;
+
+// Combined metadata
+const ALL_REGIONS = [
+  ...F_REGIONS.map(r => ({ id:r.id, label:r.label.split(" / ")[0], side:"front" })),
+  ...B_REGIONS.map(r => ({ id:r.id, label:r.label.split(" / ")[0], side:"back" })),
+];
+
+// ============================================================
+// SVG OUTLINE PATHS
+// ============================================================
+const OUTLINE_F = "M90,12 C78,12 70,20 70,38 C70,60 74,74 82,82 L88,86 L88,100 C72,102 48,106 32,118 C22,128 24,154 26,180 C27,200 24,226 24,248 C24,268 26,286 30,312 C32,342 30,366 28,380 L28,380 C50,372 78,364 102,360 L120,360 C144,364 172,372 194,380 L194,380 C192,366 190,342 192,312 C196,286 198,268 198,248 C198,226 195,200 196,180 C198,154 200,128 190,118 C174,106 150,102 134,100 L134,86 L140,82 C148,74 152,60 152,38 C152,22 144,12 132,12 Z";
+const OUTLINE_B = "M90,8 C78,8 70,16 72,34 C74,54 78,70 82,80 L88,84 L88,96 C72,98 48,104 38,116 C32,124 34,156 34,188 C34,228 32,260 34,290 C34,320 36,344 36,360 L36,360 C56,352 80,344 102,340 L120,340 C142,344 166,352 186,360 L186,360 C186,344 188,320 188,290 C190,260 188,228 188,188 C188,156 190,124 184,116 C174,104 150,98 134,96 L134,84 L140,80 C148,72 150,54 150,34 C150,16 142,8 132,8 Z M38,366 L38,366 C56,362 78,358 100,354 L122,354 C144,358 166,362 184,366 L186,404 C188,454 186,494 184,536 C162,530 142,526 122,524 L100,524 C80,526 60,530 38,536 C36,494 34,454 36,404 Z";
+
+// ============================================================
+// UTIL
+// ============================================================
+function polyD(pts) { return "M" + pts.map(p => p.join(",")).join("L") + "Z"; }
+
+// ============================================================
+// STATE
+// ============================================================
+let sel = new Set();
+let order = [];
+let idx = 0;
+let data = {};
+let cur = {};
+
+// ============================================================
+// STEP 1
+// ============================================================
+function r1() {
+  document.getElementById("intentGrid").innerHTML = INTENTS.map(i => `
+    <div class="intent-card" id="c-${i.id}" onclick="tog('${i.id}')">
+      <div class="dot"></div>
+      <div class="name">${i.zh}<span class="en">${i.en}</span></div>
+      <div class="desc">${i.desc}</div>
+    </div>`).join("");
+}
+function tog(id) {
+  sel.has(id) ? sel.delete(id) : sel.add(id);
+  document.getElementById("c-"+id).classList.toggle("sel");
+  updBtn();
+}
+function selAll(v) {
+  INTENTS.forEach(i => {
+    v ? sel.add(i.id) : sel.delete(i.id);
+    const c = document.getElementById("c-"+i.id);
+    if (c) v ? c.classList.add("sel") : c.classList.remove("sel");
+  });
+  updBtn();
+}
+function updBtn() {
+  const b = document.getElementById("btnToMaps");
+  b.disabled = sel.size === 0;
+  document.getElementById("selCount").textContent = sel.size;
+}
+
+// ============================================================
+// DRAW SVG (base regions first, overlays after → overlays on top)
+// ============================================================
+function drawSVG(svgId, regions, outlinePath) {
+  const svg = document.getElementById(svgId);
+  svg.innerHTML = "";
+
+  // Outline
+  const op = document.createElementNS("http://www.w3.org/2000/svg","path");
+  op.setAttribute("d", outlinePath);
+  op.setAttribute("class","silhouette");
+  svg.appendChild(op);
+
+  // Render regions
+  regions.forEach(r => {
+    const polys = r.polyR ? [r.poly, r.polyR] : [r.poly];
+    polys.forEach(pts => {
+      const shape = document.createElementNS("http://www.w3.org/2000/svg","path");
+      shape.setAttribute("d", polyD(pts));
+      shape.setAttribute("data-rid", r.id);
+      shape.setAttribute("data-bilateral", r.polyR ? "1" : "0");
+      shape.setAttribute("class", "region s0");
+
+      const t = document.createElementNS("http://www.w3.org/2000/svg","title");
+      t.textContent = r.label;
+      shape.appendChild(t);
+
+      // Events
+      shape.addEventListener("mouseenter", (e) => {
+        showTT(r.label, e);
+        if (r.polyR) highlightPair(svgId, r.id, true);
+      });
+      shape.addEventListener("mouseleave", () => {
+        hideTT();
+        if (r.polyR) highlightPair(svgId, r.id, false);
+      });
+
+      // CLICK → cycle: 0→+2→+1→-1→-2→0
+      // States: 0=neutral, +2/+1/-1/-2
+      const CYCLE = [0, 2, 1, -1, -2];  // 0→+2→+1→-1→-2→0
+      shape.addEventListener("click", () => {
+        const prev = cur[r.id] || 0;
+        const ci = CYCLE.indexOf(prev);
+        cur[r.id] = CYCLE[(ci + 1) % CYCLE.length];
+        updCol();
+      });
+
+      svg.appendChild(shape);
+    });
+  });
+}
+
+function highlightPair(svgId, rid, on) {
+  document.getElementById(svgId).querySelectorAll(`[data-rid="${rid}"]`).forEach(el => {
+    el.classList.toggle("hover-pair", on);
+  });
+}
+
+// ============================================================
+// COLOR
+// ============================================================
+function stateClass(v) {
+  // v: 0=neutral, +2/+1/-1/-2
+  if (v === 0)  return "s0";
+  if (v === 2)  return "sp2";
+  if (v === 1)  return "sp1";
+  if (v === -1) return "sn1";
+  if (v === -2) return "sn2";
+  return "s0";
+}
+function updCol() {
+  ["svgF","svgB"].forEach(id => {
+    document.getElementById(id).querySelectorAll(".region").forEach(el => {
+      const rid = el.getAttribute("data-rid");
+      el.setAttribute("class", `region ${stateClass(cur[rid] || 0)}`);
+    });
+  });
+}
+
+// ============================================================
+// TOOLTIP  (minimal: just the label as-is from region definition)
+// ============================================================
+function showTT(text, e) {
+  const tt = document.getElementById("tooltip");
+  tt.textContent = text;
+  tt.style.display = "block";
+  tt.style.left = (e.clientX + 14) + "px";
+  tt.style.top = (e.clientY - 30) + "px";
+}
+function hideTT() { document.getElementById("tooltip").style.display = "none"; }
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goMaps() {
+  order = [...sel];
+  if (order.length === 0) return;
+  order.forEach(id => { if (!(id in data)) data[id] = {}; });
+  idx = 0;
+  document.getElementById("s1").classList.remove("active");
+  document.getElementById("s2").classList.add("active");
+  drawSVG("svgF", F_REGIONS, OUTLINE_F);
+  drawSVG("svgB", B_REGIONS, OUTLINE_B);
+  load();
+}
+function load() {
+  const id = order[idx];
+  const it = INTENTS.find(i => i.id === id);
+  document.getElementById("badge").textContent = `${it.zh} (${it.en})`;
+  document.getElementById("counter").textContent = `${idx+1} / ${order.length}`;
+  cur = { ...(data[id] || {}) };
+  updCol();
+  document.getElementById("btnNext").style.display = idx < order.length-1 ? "" : "none";
+  document.getElementById("btnDone").style.display = idx === order.length-1 ? "" : "none";
+  prog();
+}
+function save() { data[order[idx]] = { ...cur }; }
+function next() { save(); if (idx < order.length-1) { idx++; load(); } }
+function prev() { save(); if (idx > 0) { idx--; load(); } }
+function resetCur() { cur = {}; updCol(); }
+function done() {
+  save();
+  document.getElementById("s2").classList.remove("active");
+  document.getElementById("s3").classList.add("active");
+  r3();
+  prog();
+}
+function back() {
+  document.getElementById("s3").classList.remove("active");
+  document.getElementById("s2").classList.add("active");
+  load();
+}
+function prog() {
+  const f = document.getElementById("pFill"); const t = document.getElementById("pText");
+  if (document.getElementById("s1").classList.contains("active")) { f.style.width="10%"; t.textContent="Step 1: Select intents"; }
+  else if (document.getElementById("s2").classList.contains("active")) {
+    const pct = 10 + Math.round((idx+1)/order.length * 75);
+    f.style.width=pct+"%"; t.textContent=`Step 2: Intent ${idx+1}/${order.length}`;
+  }
+  else { f.style.width="92%"; t.textContent="Step 3: Review & Export"; }
+}
+
+// ============================================================
+// STEP 3
+// ============================================================
+function r3() {
+  document.getElementById("revGrid").innerHTML = order.map(id => {
+    const it = INTENTS.find(i => i.id === id);
+    const d = data[id] || {};
+    const entries = Object.entries(d);
+    const rated = entries.filter(([,v]) => v !== 0).length;
+    const sum = entries.reduce((s,[,v]) => s+v, 0);
+    const avg = rated > 0 ? (sum / rated).toFixed(2) : "—";
+    const sign = avg > 0 ? "+" : "";
+    return `<div class="rev-card">
+      <div class="r-name">${it.zh} <small style="color:var(--dim)">${it.en}</small></div>
+      <div class="r-stats">
+        Rated: ${rated}/${total} regions &nbsp;|&nbsp; Mean: ${sign}${avg}
+      </div></div>`;
+  }).join("");
+}
+function dl() {
+  save();
+  const out = {
+    timestamp: new Date().toISOString(),
+    surveyVersion: "1.4",
+    scaleDescription: "+2=Completely Acceptable, +1=Somewhat Acceptable, 0=Neutral (default), -1=Somewhat Unacceptable, -2=Completely Unacceptable",
+    selectedIntents: order.map(id => {
+      const it = INTENTS.find(i=>i.id===id);
+      return { id, zh:it.zh, en:it.en };
+    }),
+    bodyData: data,
+    regions: ALL_REGIONS.map(r => ({ id:r.id, label:r.label, side:r.side })),
+  };
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `social-touch-survey-${Date.now()}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+r1(); updBtn(); prog();
+</script>
+</body>
+</html>
