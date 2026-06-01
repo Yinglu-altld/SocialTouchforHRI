@@ -1,0 +1,58 @@
+create extension if not exists pgcrypto;
+
+create table if not exists public.survey_responses (
+  id uuid primary key default gen_random_uuid(),
+  participant_id uuid not null,
+  created_at timestamptz not null default now(),
+
+  study_version text not null,
+  consent_version text not null,
+  consent_given boolean not null default false,
+  language text,
+
+  age_group text,
+  country text,
+  gender text,
+
+  selected_intents jsonb not null,
+  body_data jsonb not null,
+  regions jsonb not null,
+  metadata jsonb not null default '{}'::jsonb,
+
+  constraint selected_intents_is_array
+    check (jsonb_typeof(selected_intents) = 'array'),
+  constraint body_data_is_object
+    check (jsonb_typeof(body_data) = 'object'),
+  constraint regions_is_array
+    check (jsonb_typeof(regions) = 'array'),
+  constraint response_requires_consent
+    check (consent_given = true),
+  constraint body_data_reasonable_size
+    check (pg_column_size(body_data) < 250000)
+);
+
+alter table public.survey_responses enable row level security;
+
+revoke all on public.survey_responses from anon, authenticated;
+grant usage on schema public to anon;
+grant insert on public.survey_responses to anon;
+
+drop policy if exists "allow anonymous survey submissions"
+on public.survey_responses;
+
+create policy "allow anonymous survey submissions"
+on public.survey_responses
+for insert
+to anon
+with check (
+  consent_given = true
+  and jsonb_typeof(selected_intents) = 'array'
+  and jsonb_typeof(body_data) = 'object'
+  and jsonb_typeof(regions) = 'array'
+);
+
+create index if not exists survey_responses_created_at_idx
+on public.survey_responses (created_at);
+
+create index if not exists survey_responses_participant_id_idx
+on public.survey_responses (participant_id);

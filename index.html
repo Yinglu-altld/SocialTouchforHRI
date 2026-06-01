@@ -92,7 +92,7 @@
   }
 
   /* ── Nav ── */
-  .nav { display:flex; gap:12px; justify-content:center; margin-top:24px; align-items:center; }
+  .nav { display:flex; gap:12px; justify-content:center; margin-top:24px; align-items:center; flex-wrap:wrap; }
   .btn { padding:10px 26px; border-radius:8px; font-size:0.86rem; font-weight:600; cursor:pointer; transition:all 0.18s; border:none; }
   .btn-p { background:var(--accent); color:var(--bg); }
   .btn-p:hover { filter:brightness(1.15); }
@@ -110,6 +110,29 @@
   .rev-card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px; }
   .rev-card .r-name { font-weight:600; font-size:0.86rem; }
   .rev-card .r-stats { font-size:0.72rem; color:var(--dim); margin-top:4px; }
+  .survey-form {
+    background:var(--card); border:1px solid var(--border); border-radius:8px;
+    padding:14px; margin-bottom:14px;
+  }
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; }
+  .field label { display:block; font-size:0.72rem; color:var(--dim); margin-bottom:4px; }
+  .field input, .field select {
+    width:100%; background:#0f0f0f; color:var(--text); border:1px solid var(--border);
+    border-radius:7px; padding:9px 10px; font-size:0.82rem;
+  }
+  .consent-row { display:flex; gap:8px; align-items:flex-start; margin-top:12px; font-size:0.74rem; color:#aaa; }
+  .consent-row input { margin-top:3px; }
+  .consent-panel, .result-panel {
+    max-width:720px; margin:0 auto; background:var(--card); border:1px solid var(--border);
+    border-radius:8px; padding:18px;
+  }
+  .consent-panel ul { margin:12px 0 0 18px; color:#aaa; font-size:0.82rem; }
+  .consent-panel li { margin-bottom:6px; }
+  .result-kicker { font-size:0.76rem; font-weight:700; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.08em; }
+  .result-panel.ok { border-color:rgba(34,197,94,0.5); }
+  .result-panel.ok .result-kicker { color:#22c55e; }
+  .result-panel.err { border-color:rgba(239,68,68,0.5); }
+  .result-panel.err .result-kicker { color:#ef4444; }
 
   @media (max-width: 760px) {
     .maps-row { flex-direction:column; align-items:center; }
@@ -135,8 +158,32 @@
   <!-- ================================================================ -->
   <!-- STEP 1                                                            -->
   <!-- ================================================================ -->
-  <div class="step active" id="s1">
-    <div class="step-title">Step 1 — Which social intents are appropriate for robot touch?</div>
+  <div class="step active" id="s0">
+    <div class="consent-panel">
+      <div class="step-title">Step 1 — Consent</div>
+      <div class="step-desc">
+        Please confirm that you are eligible and agree before starting the survey.
+      </div>
+      <ul>
+        <li>You are 18 years old or older.</li>
+        <li>Your anonymous response will be stored for research use.</li>
+        <li>You can stop before submission by closing this page.</li>
+      </ul>
+      <label class="consent-row">
+        <input id="consentGiven" type="checkbox" onchange="toggleConsentStart()">
+        <span>I confirm that I am 18 or older and agree to submit my anonymous survey response for research use.</span>
+      </label>
+      <div class="nav">
+        <button class="btn btn-p" id="btnConsentStart" disabled onclick="startSurvey()">Start survey</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 2                                                            -->
+  <!-- ================================================================ -->
+  <div class="step" id="s1">
+    <div class="step-title">Step 2 — Which social intents are appropriate for robot touch?</div>
     <div class="step-desc">
       Below are 10 ways humans communicate through touch (Bhardwaj et al., CHI 2026).
       <strong>Select all</strong> that you believe a robot should be allowed to convey through physical touch.
@@ -154,10 +201,10 @@
   </div>
 
   <!-- ================================================================ -->
-  <!-- STEP 2                                                            -->
+  <!-- STEP 3                                                            -->
   <!-- ================================================================ -->
   <div class="step" id="s2">
-    <div class="step-title">Step 2 — Where on the body is this touch acceptable?</div>
+    <div class="step-title">Step 3 — Where on the body is this touch acceptable?</div>
     <div class="step-desc">
       <span class="badge" id="badge"></span><br>
       <strong>Click each body region</strong> to rate:
@@ -196,23 +243,67 @@
 
     <div class="nav">
       <button class="btn btn-warn" onclick="resetCur()">↺ Reset Current</button>
-      <button class="btn btn-s" onclick="prev()">← Prev</button>
+      <button class="btn btn-s" id="btnPrev" onclick="prev()">← Back to intents</button>
       <span class="counter" id="counter"></span>
       <button class="btn btn-p" id="btnNext" onclick="next()">Next →</button>
-      <button class="btn btn-e" id="btnDone" style="display:none" onclick="done()">Review & Export →</button>
+      <button class="btn btn-e" id="btnDone" style="display:none" onclick="done()">Review & Submit →</button>
     </div>
   </div>
 
   <!-- ================================================================ -->
-  <!-- STEP 3                                                            -->
+  <!-- STEP 4                                                            -->
   <!-- ================================================================ -->
   <div class="step" id="s3">
-    <div class="step-title">Step 3 — Review & Export</div>
-    <div class="step-desc">Check your responses, then download as JSON.</div>
+    <div class="step-title">Step 4 — Review & Submit</div>
+    <div class="step-desc">Check your responses, then submit them to the research database.</div>
+    <div class="survey-form">
+      <div class="form-grid">
+        <div class="field">
+          <label for="ageGroup">Age group</label>
+          <select id="ageGroup">
+            <option value="">Prefer not to say</option>
+            <option value="18-24">18-24</option>
+            <option value="25-34">25-34</option>
+            <option value="35-44">35-44</option>
+            <option value="45-54">45-54</option>
+            <option value="55-64">55-64</option>
+            <option value="65+">65+</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="country">Country / region</label>
+          <input id="country" type="text" autocomplete="country-name" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label for="gender">Gender</label>
+          <select id="gender">
+            <option value="">Prefer not to say</option>
+            <option value="woman">Woman</option>
+            <option value="man">Man</option>
+            <option value="non_binary">Non-binary</option>
+            <option value="self_describe">Prefer to self-describe</option>
+          </select>
+        </div>
+      </div>
+    </div>
     <div class="rev-grid" id="revGrid"></div>
     <div class="nav">
       <button class="btn btn-s" onclick="back()">← Back to Maps</button>
-      <button class="btn btn-e" onclick="dl()">↓ Download JSON</button>
+      <button class="btn btn-e" id="btnSubmit" onclick="submitToSupabase()">Submit response</button>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- RESULT                                                            -->
+  <!-- ================================================================ -->
+  <div class="step" id="s4">
+    <div class="result-panel" id="resultPanel">
+      <div class="result-kicker" id="resultKicker"></div>
+      <div class="step-title" id="resultTitle"></div>
+      <div class="step-desc" id="resultMessage"></div>
+      <div class="nav">
+        <button class="btn btn-s" id="btnRetry" onclick="backToReview()" style="display:none">Back to review</button>
+      </div>
     </div>
   </div>
 
@@ -221,7 +312,17 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ============================================================
+// SUPABASE
+// ============================================================
+const SUPABASE_URL = "https://fbcyuboctnbkjhcwdpli.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_dIJktlVfSqsPZEGNNU9BQA_i880dn2e";
+const supabaseClient = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+  : null;
+
 // ============================================================
 // INTENTS
 // ============================================================
@@ -297,6 +398,7 @@ const ALL_REGIONS = [
   ...F_REGIONS.map(r => ({ id:r.id, label:r.label.split(" / ")[0], side:"front" })),
   ...B_REGIONS.map(r => ({ id:r.id, label:r.label.split(" / ")[0], side:"back" })),
 ];
+const total = ALL_REGIONS.length;
 
 // ============================================================
 // SVG OUTLINE PATHS
@@ -321,6 +423,21 @@ let cur = {};
 // ============================================================
 // STEP 1
 // ============================================================
+function showStep(stepId) {
+  ["s0", "s1", "s2", "s3", "s4"].forEach(id => {
+    document.getElementById(id).classList.toggle("active", id === stepId);
+  });
+  prog();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function toggleConsentStart() {
+  const checked = document.getElementById("consentGiven").checked;
+  document.getElementById("btnConsentStart").disabled = !checked;
+}
+function startSurvey() {
+  if (!document.getElementById("consentGiven").checked) return;
+  showStep("s1");
+}
 function r1() {
   document.getElementById("intentGrid").innerHTML = INTENTS.map(i => `
     <div class="intent-card" id="c-${i.id}" onclick="tog('${i.id}')">
@@ -447,8 +564,7 @@ function goMaps() {
   if (order.length === 0) return;
   order.forEach(id => { if (!(id in data)) data[id] = {}; });
   idx = 0;
-  document.getElementById("s1").classList.remove("active");
-  document.getElementById("s2").classList.add("active");
+  showStep("s2");
   drawSVG("svgF", F_REGIONS, OUTLINE_F);
   drawSVG("svgB", B_REGIONS, OUTLINE_B);
   load();
@@ -460,34 +576,42 @@ function load() {
   document.getElementById("counter").textContent = `${idx+1} / ${order.length}`;
   cur = { ...(data[id] || {}) };
   updCol();
+  document.getElementById("btnPrev").textContent = idx === 0 ? "← Back to intents" : "← Prev";
   document.getElementById("btnNext").style.display = idx < order.length-1 ? "" : "none";
   document.getElementById("btnDone").style.display = idx === order.length-1 ? "" : "none";
   prog();
 }
 function save() { data[order[idx]] = { ...cur }; }
 function next() { save(); if (idx < order.length-1) { idx++; load(); } }
-function prev() { save(); if (idx > 0) { idx--; load(); } }
+function prev() {
+  save();
+  if (idx > 0) {
+    idx--;
+    load();
+    return;
+  }
+  showStep("s1");
+}
 function resetCur() { cur = {}; updCol(); }
 function done() {
   save();
-  document.getElementById("s2").classList.remove("active");
-  document.getElementById("s3").classList.add("active");
+  showStep("s3");
   r3();
-  prog();
 }
 function back() {
-  document.getElementById("s3").classList.remove("active");
-  document.getElementById("s2").classList.add("active");
+  showStep("s2");
   load();
 }
 function prog() {
   const f = document.getElementById("pFill"); const t = document.getElementById("pText");
-  if (document.getElementById("s1").classList.contains("active")) { f.style.width="10%"; t.textContent="Step 1: Select intents"; }
+  if (document.getElementById("s0").classList.contains("active")) { f.style.width="6%"; t.textContent="Step 1: Consent"; }
+  else if (document.getElementById("s1").classList.contains("active")) { f.style.width="20%"; t.textContent="Step 2: Select intents"; }
   else if (document.getElementById("s2").classList.contains("active")) {
-    const pct = 10 + Math.round((idx+1)/order.length * 75);
-    f.style.width=pct+"%"; t.textContent=`Step 2: Intent ${idx+1}/${order.length}`;
+    const pct = 25 + Math.round((idx+1)/order.length * 55);
+    f.style.width=pct+"%"; t.textContent=`Step 3: Intent ${idx+1}/${order.length}`;
   }
-  else { f.style.width="92%"; t.textContent="Step 3: Review & Export"; }
+  else if (document.getElementById("s3").classList.contains("active")) { f.style.width="90%"; t.textContent="Step 4: Review & Submit"; }
+  else { f.style.width="100%"; t.textContent="Submission status"; }
 }
 
 // ============================================================
@@ -509,30 +633,151 @@ function r3() {
       </div></div>`;
   }).join("");
 }
-function dl() {
+
+function getParticipantId() {
+  let id = localStorage.getItem("participant_id");
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : `p-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem("participant_id", id);
+  }
+  return id;
+}
+
+function fieldVal(id) {
+  const el = document.getElementById(id);
+  return el && el.value ? el.value.trim() : null;
+}
+
+function normalizedBodyData() {
+  const out = {};
+  order.forEach(intentId => {
+    out[intentId] = {};
+    ALL_REGIONS.forEach(region => {
+      out[intentId][region.id] = data[intentId]?.[region.id] ?? 0;
+    });
+  });
+  return out;
+}
+
+function selectedIntentPayload() {
+  return order.map(id => {
+    const it = INTENTS.find(i => i.id === id);
+    return { id, zh:it.zh, en:it.en };
+  });
+}
+
+function regionsPayload() {
+  return ALL_REGIONS.map(r => ({ id:r.id, label:r.label, side:r.side }));
+}
+
+function buildSurveyPayload() {
   save();
-  const out = {
+  return {
+    participant_id: getParticipantId(),
     timestamp: new Date().toISOString(),
-    surveyVersion: "1.4",
+    study_version: "1.4",
+    consent_version: "2026-06-01",
+    consent_given: document.getElementById("consentGiven")?.checked || false,
+    language: navigator.language || null,
+    age_group: fieldVal("ageGroup"),
+    country: fieldVal("country"),
+    gender: fieldVal("gender"),
     scaleDescription: "+2=Completely Acceptable, +1=Somewhat Acceptable, 0=Neutral (default), -1=Somewhat Unacceptable, -2=Completely Unacceptable",
-    selectedIntents: order.map(id => {
-      const it = INTENTS.find(i=>i.id===id);
-      return { id, zh:it.zh, en:it.en };
-    }),
-    bodyData: data,
-    regions: ALL_REGIONS.map(r => ({ id:r.id, label:r.label, side:r.side })),
+    selected_intents: selectedIntentPayload(),
+    body_data: normalizedBodyData(),
+    regions: regionsPayload(),
+    metadata: {
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      source: "github_pages_static_html"
+    }
   };
-  const blob = new Blob([JSON.stringify(out, null, 2)], { type:"application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `social-touch-survey-${Date.now()}.json`;
-  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function showSubmissionResult(ok, title, message) {
+  const panel = document.getElementById("resultPanel");
+  panel.className = `result-panel ${ok ? "ok" : "err"}`;
+  document.getElementById("resultKicker").textContent = ok ? "Response submitted" : "Submission error";
+  document.getElementById("resultTitle").textContent = title;
+  document.getElementById("resultMessage").textContent = message;
+  document.getElementById("btnRetry").style.display = ok ? "none" : "";
+  showStep("s4");
+}
+
+function backToReview() {
+  const btn = document.getElementById("btnSubmit");
+  btn.disabled = false;
+  btn.textContent = "Submit response";
+  showStep("s3");
+}
+
+async function submitToSupabase() {
+  const btn = document.getElementById("btnSubmit");
+  const payload = buildSurveyPayload();
+
+  if (!supabaseClient) {
+    showSubmissionResult(
+      false,
+      "Your response was not submitted.",
+      "The submission library did not load. Please check your connection and try again."
+    );
+    return;
+  }
+
+  if (!payload.consent_given) {
+    showSubmissionResult(
+      false,
+      "Consent is required.",
+      "Please go back to the start page and confirm consent before submitting."
+    );
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Submitting...";
+
+  const { error } = await supabaseClient
+    .from("survey_responses")
+    .insert({
+      participant_id: payload.participant_id,
+      study_version: payload.study_version,
+      consent_version: payload.consent_version,
+      consent_given: payload.consent_given,
+      language: payload.language,
+      age_group: payload.age_group,
+      country: payload.country,
+      gender: payload.gender,
+      selected_intents: payload.selected_intents,
+      body_data: payload.body_data,
+      regions: payload.regions,
+      metadata: payload.metadata
+    });
+
+  if (error) {
+    console.error(error);
+    btn.disabled = false;
+    btn.textContent = "Submit response";
+    showSubmissionResult(
+      false,
+      "Your response was not submitted.",
+      "Please check your connection and try again. If the problem continues, contact the research team."
+    );
+    return;
+  }
+
+  localStorage.setItem("survey_submitted", "1");
+  btn.textContent = "Submitted";
+  showSubmissionResult(
+    true,
+    "Thank you for taking part.",
+    "Your response has been successfully submitted."
+  );
 }
 
 // ============================================================
 // INIT
 // ============================================================
-r1(); updBtn(); prog();
+r1(); updBtn(); toggleConsentStart(); prog();
 </script>
 </body>
 </html>
